@@ -114,14 +114,21 @@ jobs:
           path: release-apks
           merge-multiple: true
 
+      - name: Rename APKs
+        run: |
+          tag="${{ github.event.release.tag_name }}"
+          version="${tag#v}"
+          mv release-apks/app-default-release.apk "release-apks/CamUltra-${version}-default.apk"
+          mv release-apks/app-samsung-release.apk "release-apks/CamUltra-${version}-samsung.apk"
+          mv release-apks/app-meitu-release.apk "release-apks/CamUltra-${version}-meitu.apk"
+          ls -l release-apks/
+
       - name: Upload Release APKs to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.event.release.tag_name }}
           fail_on_unmatched_files: true
           files: |
-            release-apks/app-default-release.apk
-            release-apks/app-samsung-release.apk
-            release-apks/app-meitu-release.apk
+            release-apks/CamUltra-*.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
