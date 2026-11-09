@@ -24,14 +24,14 @@
             android:resizeableActivity="true"
             android:excludeFromRecents="true"
             android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation"
-            android:theme="@style/Theme.LeicaFujiCam" />
+            android:theme="@style/Theme.CamUltra" />
         <activity
             android:name=".screencapture.ScreenCapturePermissionActivity"
             android:exported="false"
             android:excludeFromRecents="true"
             android:finishOnTaskLaunch="true"
             android:taskAffinity=":screencapture"
-            android:theme="@style/Theme.LeicaFujiCam.Transparent" />
+            android:theme="@style/Theme.CamUltra.Transparent" />
 
         <activity
             android:name=".send.ApplyLutActivity"
@@ -41,7 +41,7 @@
             android:label="@string/apply_lut_title"
             android:launchMode="singleTask"
             android:taskAffinity=":lut"
-            android:theme="@style/Theme.LeicaFujiCam.Transparent">
+            android:theme="@style/Theme.CamUltra.Transparent">
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
                 <action android:name="android.intent.action.SEND_MULTIPLE" />

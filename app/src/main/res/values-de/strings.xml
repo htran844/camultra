@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">LeicaFujiCam</string>
+    <string name="app_name">Cam Ultra</string>
     
     <!-- Camera Controls -->
     <string name="switch_camera">Kamera wechseln</string>
@@ -157,7 +157,7 @@
     <string name="billing_feature_lifetime">Einmaliger Kauf, lebenslange Nutzung</string>
     <string name="billing_premium_get_access">Premium-Zugriff erhalten</string>
     <string name="billing_price_region_notice">Preis variiert nach Region</string>
-    <string name="settings_premium_title">leicafujicam Pro</string>
+    <string name="settings_premium_title">Cam Ultra Pro</string>
     <string name="settings_premium_description">Alle Premium-LUTs freischalten und uns unterstützen.</string>
     
     <!-- Custom Import -->
@@ -269,7 +269,7 @@
     
     <!-- About & Donation -->
     <string name="settings_donation">Spende</string>
-    <string name="settings_donation_description">Unterstützen Sie die Entwicklung von LeicaFujiCam</string>
+    <string name="settings_donation_description">Unterstützen Sie die Entwicklung von Cam Ultra</string>
     <string name="settings_default_focal_length">Standard-Brennweite</string>
     <string name="settings_default_focal_length_description">Brennweite festlegen, auf die beim App-Start automatisch gewechselt werden soll.</string>
     <string name="refresh">Aktualisieren</string>

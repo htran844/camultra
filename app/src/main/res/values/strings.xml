@@ -1,6 +1,6 @@
 <resources>
     <string name="camera_video_fps_unavailable">Recording is unavailable because the camera did not provide valid frame rate ranges.</string>
-    <string name="app_name">LeicaFujiCam</string>
+    <string name="app_name">Cam Ultra</string>
 
     <!-- Camera Controls -->
     <string name="switch_camera">Switch Camera</string>
@@ -500,7 +500,7 @@
     <string name="billing_feature_lifetime">One-time purchase, lifetime use</string>
     <string name="billing_premium_get_access">Get Premium Access</string>
     <string name="billing_price_region_notice">Price varies by region</string>
-    <string name="settings_premium_title">leicafujicam Pro</string>
+    <string name="settings_premium_title">Cam Ultra Pro</string>
     <string name="settings_premium_description">Unlock all premium LUTs and support us.</string>
 
     <!-- Custom Import -->
@@ -862,7 +862,7 @@
     <string name="settings_community_group_telegram_description">Telegram: https://t.me/photoncameraapp</string>
     <string name="settings_community_group_qq_description">QQ Group: 569605452</string>
     <string name="settings_donation">Donation</string>
-    <string name="settings_donation_description">Support the development of LeicaFujiCam</string>
+    <string name="settings_donation_description">Support the development of Cam Ultra</string>
     <string name="settings_check_update">Check for Updates</string>
     <string name="settings_check_update_description">Current version: %1$s</string>
     <string name="settings_check_update_running">Checking and downloading updates...</string>
@@ -1516,9 +1516,9 @@
     <string name="fotufilm_value_minutes">%1$s min</string>
     <string name="fotufilm_value_years">%1$s yr</string>
     <!-- /Fotufilm controls -->
-    <string name="about_app_title">leicafujicam</string>
+    <string name="about_app_title">Cam Ultra</string>
     <string name="about_app_description">Phát triển bởi Hoàng &amp; Muse • Dựa trên mã nguồn mở PhotonCamera (Apache License 2.0)</string>
-    <string name="donation_thanks">Cảm ơn bạn đã ủng hộ leicafujicam!</string>
+    <string name="donation_thanks">Cảm ơn bạn đã ủng hộ Cam Ultra!</string>
 
     <string name="calibration_title">Device Color Calibration</string>
     <string name="calibration_toolbox_desc">Calibrate the built-in looks with a color chart, right on this device</string>

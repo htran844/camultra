@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="Theme.LeicaFujiCam" parent="Theme.AppCompat.Light.NoActionBar" />
+    <style name="Theme.CamUltra" parent="Theme.AppCompat.Light.NoActionBar" />
 
-    <style name="Theme.LeicaFujiCam.Splash" parent="Theme.SplashScreen">
+    <style name="Theme.CamUltra.Splash" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/splash_background</item>
         <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
         <item name="splashScreenIconSize">240dp</item>
-        <item name="postSplashScreenTheme">@style/Theme.LeicaFujiCam</item>
+        <item name="postSplashScreenTheme">@style/Theme.CamUltra</item>
     </style>
 
-    <style name="Theme.LeicaFujiCam.Transparent" parent="Theme.AppCompat.Light.NoActionBar">
+    <style name="Theme.CamUltra.Transparent" parent="Theme.AppCompat.Light.NoActionBar">
         <item name="android:windowIsTranslucent">true</item>
         <item name="android:windowBackground">@android:color/transparent</item>
         <item name="android:backgroundDimEnabled">false</item>

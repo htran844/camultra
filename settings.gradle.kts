@@ -22,6 +22,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "leicafujicam"
+rootProject.name = "camultra"
 include(":app")
  

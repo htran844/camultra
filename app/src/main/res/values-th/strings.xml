@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">LeicaFujiCam</string>
+    <string name="app_name">Cam Ultra</string>
 
     <!-- Camera Controls -->
     <string name="switch_camera">สลับกล้อง</string>
@@ -277,7 +277,7 @@
     <string name="billing_feature_lifetime">ซื้อครั้งเดียว ใช้ได้ตลอดชีพ</string>
     <string name="billing_premium_get_access">รับสิทธิ์เข้าถึงพรีเมียม</string>
     <string name="billing_price_region_notice">ราคาแตกต่างกันไปตามภูมิภาค</string>
-    <string name="settings_premium_title">leicafujicam Pro</string>
+    <string name="settings_premium_title">Cam Ultra Pro</string>
     <string name="settings_premium_description">ปลดล็อก LUT พรีเมียมทั้งหมดและสนับสนุนเรา</string>
 
     <!-- Custom Import -->
@@ -604,7 +604,7 @@
     <string name="settings_community_group_telegram_description">กลุ่มโทรเลข: https://t.me/photoncameraapp</string>
     <string name="settings_community_group_qq_description">กลุ่ม QQ: 569605452</string>
     <string name="settings_donation">บริจาค</string>
-    <string name="settings_donation_description">สนับสนุนการพัฒนา LeicaFujiCam</string>
+    <string name="settings_donation_description">สนับสนุนการพัฒนา Cam Ultra</string>
     <string name="settings_check_update">ตรวจสอบการอัปเดต</string>
     <string name="settings_check_update_description">เวอร์ชันปัจจุบัน: %1$s</string>
     <string name="settings_check_update_running">กำลังตรวจสอบและดาวน์โหลดการอัปเดต...</string>
