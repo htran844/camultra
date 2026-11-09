@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="camera_video_fps_unavailable">Không thể quay vì máy ảnh không cung cấp dải tốc độ khung hình hợp lệ.</string>
-    <string name="app_name">LeicaFujiCam</string>
+    <string name="app_name">Cam Ultra</string>
     <string name="switch_camera">Chuyển máy ảnh</string>
     <string name="settings">Cài đặt</string>
     <string name="flash">Đèn flash</string>
@@ -466,7 +466,7 @@
     <string name="billing_feature_lifetime">Mua một lần, dùng trọn đời</string>
     <string name="billing_premium_get_access">Mở quyền Premium</string>
     <string name="billing_price_region_notice">Giá thay đổi theo khu vực</string>
-    <string name="settings_premium_title">leicafujicam Pro</string>
+    <string name="settings_premium_title">Cam Ultra Pro</string>
     <string name="settings_premium_description">Mở khóa tất cả LUT cao cấp và ủng hộ chúng tôi.</string>
     <string name="custom_tag">TÙY CHỈNH</string>
     <string name="delete_confirm_title">Xác nhận xóa</string>
@@ -808,7 +808,7 @@
     <string name="settings_community_group_telegram_description">Telegram: https://t.me/photoncameraapp</string>
     <string name="settings_community_group_qq_description">Nhóm QQ: 569605452</string>
     <string name="settings_donation">Ủng hộ</string>
-    <string name="settings_donation_description">Ủng hộ phát triển LeicaFujiCam</string>
+    <string name="settings_donation_description">Ủng hộ phát triển Cam Ultra</string>
     <string name="settings_check_update">Kiểm tra cập nhật</string>
     <string name="settings_check_update_description">Phiên bản hiện tại: %1$s</string>
     <string name="settings_check_update_running">Đang kiểm tra và tải bản cập nhật...</string>
@@ -1430,9 +1430,9 @@
     <string name="fotufilm_value_seconds">%1$s giây</string>
     <string name="fotufilm_value_minutes">%1$s phút</string>
     <string name="fotufilm_value_years">%1$s năm</string>
-    <string name="about_app_title">leicafujicam</string>
+    <string name="about_app_title">Cam Ultra</string>
     <string name="about_app_description">Phát triển bởi Hoàng &amp; Muse • Dựa trên mã nguồn mở PhotonCamera (Apache License 2.0)</string>
-    <string name="donation_thanks">Cảm ơn bạn đã ủng hộ leicafujicam!</string>
+    <string name="donation_thanks">Cảm ơn bạn đã ủng hộ Cam Ultra!</string>
 
     <string name="calibration_title">Hiệu chuẩn màu theo máy</string>
     <string name="calibration_toolbox_desc">Hiệu chuẩn các phong cách tích hợp bằng bảng màu, ngay trên máy này</string>

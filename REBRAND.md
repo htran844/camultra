@@ -126,3 +126,18 @@ tại `app/src/main/assets/poses/POSEGUIDE-LICENSE.txt`, dữ liệu đóng gói
   Built-in cũng vậy. Lưu ý: thứ tự này là mặc định của app; nếu người dùng đã
   tự sắp xếp thứ tự bộ lọc trong màn Quản lý bộ lọc thì thứ tự đã lưu của họ
   được ưu tiên.
+
+## 1.0.11 — Đổi tên hiển thị thành Cam Ultra
+
+- Tên hiển thị của app đổi từ **LeicaFujiCam** thành **Cam Ultra**: `app_name` ở cả
+  13 locale, `settings_premium_title` thành "Cam Ultra Pro", câu ủng hộ phát triển
+  (`settings_donation_description`), tiêu đề màn About (`about_app_title`) và câu
+  cảm ơn donate (`donation_thanks`).
+- Theme đổi tên nội bộ `Theme.LeicaFujiCam` → `Theme.CamUltra` (manifest +
+  themes.xml); tên project Gradle `rootProject.name` đổi thành `camultra`.
+  Version lên 1.0.11 (code 12).
+- GIỮ NGUYÊN, không đổi: package/applicationId `vn.hoang.leicafujicam` (đổi
+  package từng làm vỡ JNI native ở bản 1.0.1), tiền tố tên file ảnh
+  `leicafujicam_*`, thư mục lưu `DCIM/leicafujicam` và EXIF Software — đổi
+  những thứ này sẽ tách ảnh cũ/mới ra hai nơi khác nhau, nên để riêng một lần
+  đổi khác nếu Hoàng muốn.
