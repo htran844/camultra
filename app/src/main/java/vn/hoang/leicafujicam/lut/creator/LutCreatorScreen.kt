@@ -3,20 +3,25 @@ package vn.hoang.leicafujicam.lut.creator
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
+import android.content.Intent
+import android.graphics.Bitmap
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -24,6 +29,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.FileProvider
+import coil.compose.AsyncImage
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import vn.hoang.leicafujicam.R
 import vn.hoang.leicafujicam.ui.components.PaymentDialog
 import vn.hoang.leicafujicam.ui.icons.AppIcons
@@ -35,7 +44,8 @@ private data class LocalImagePairDraft(
 
 private enum class LutCreatorMode {
     AI,
-    LOCAL
+    LOCAL,
+    PHOTO_SET
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -55,7 +65,18 @@ fun LutCreatorScreen(
     var selectedMode by remember { mutableStateOf(LutCreatorMode.AI) }
     var pendingSourceUri by remember { mutableStateOf<Uri?>(null) }
     var localPairs by remember { mutableStateOf(listOf<LocalImagePairDraft>()) }
+    var photoSetUris by remember { mutableStateOf(listOf<Uri>()) }
+    var photoSetName by remember { mutableStateOf("") }
+    var photoSetUseExample by remember { mutableStateOf(false) }
+    var photoSetCompare by remember { mutableStateOf(1f) }
     val idleScrollState = rememberScrollState()
+
+    val photoSetReport by viewModel.photoSetReport.collectAsState()
+    val photoSetTuning by viewModel.photoSetTuning.collectAsState()
+    val photoSetPreviewLut by viewModel.photoSetPreviewLut.collectAsState()
+    val photoSetProgress by viewModel.photoSetProgress.collectAsState()
+    val photoSetSkippedCount by viewModel.photoSetSkippedCount.collectAsState()
+    val lastExportedCubeFile by viewModel.lastExportedCubeFile.collectAsState()
 
     val aiImageLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -82,6 +103,14 @@ fun LutCreatorScreen(
             localPairs = localPairs + LocalImagePairDraft(sourceUri, uri)
         }
         pendingSourceUri = null
+    }
+
+    val photoSetLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetMultipleContents()
+    ) { uris: List<Uri> ->
+        if (uris.isEmpty()) return@rememberLauncherForActivityResult
+        photoSetUris = (photoSetUris + uris).distinct()
+            .take(LutCreatorViewModel.PHOTO_SET_MAX_PHOTOS)
     }
 
     Scaffold(
@@ -136,6 +165,11 @@ fun LutCreatorScreen(
                                 selected = selectedMode == LutCreatorMode.LOCAL,
                                 onClick = { selectedMode = LutCreatorMode.LOCAL },
                                 text = { Text(stringResource(R.string.lut_creator_tab_local)) }
+                            )
+                            Tab(
+                                selected = selectedMode == LutCreatorMode.PHOTO_SET,
+                                onClick = { selectedMode = LutCreatorMode.PHOTO_SET },
+                                text = { Text(stringResource(R.string.lut_creator_tab_photo_set)) }
                             )
                         }
 
@@ -304,6 +338,101 @@ fun LutCreatorScreen(
                                             }
                                         }
                                     }
+
+                                    LutCreatorMode.PHOTO_SET -> {
+                                        Text(
+                                            text = stringResource(R.string.lut_creator_tab_photo_set),
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
+                                        )
+                                        Spacer(modifier = Modifier.height(6.dp))
+                                        Text(
+                                            text = stringResource(R.string.lut_creator_photo_set_desc),
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                        Spacer(modifier = Modifier.height(6.dp))
+                                        Text(
+                                            text = stringResource(R.string.lut_creator_photo_set_hint),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                        Spacer(modifier = Modifier.height(16.dp))
+                                        Button(
+                                            onClick = {
+                                                if (!canUseLutCreator) {
+                                                    viewModel.showPaymentDialog = true
+                                                } else {
+                                                    photoSetLauncher.launch("image/*")
+                                                }
+                                            },
+                                            modifier = Modifier.fillMaxWidth(),
+                                            shape = RoundedCornerShape(12.dp)
+                                        ) {
+                                            Text(stringResource(R.string.lut_creator_photo_set_select))
+                                        }
+                                        if (photoSetUris.isNotEmpty()) {
+                                            Spacer(modifier = Modifier.height(12.dp))
+                                            Text(
+                                                text = stringResource(
+                                                    R.string.lut_creator_photo_set_count,
+                                                    photoSetUris.size,
+                                                    LutCreatorViewModel.PHOTO_SET_MAX_PHOTOS
+                                                ),
+                                                style = MaterialTheme.typography.titleSmall
+                                            )
+                                            Spacer(modifier = Modifier.height(8.dp))
+                                            photoSetUris.chunked(3).forEach { rowUris ->
+                                                Row(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                                ) {
+                                                    rowUris.forEach { uri ->
+                                                        Box(
+                                                            modifier = Modifier
+                                                                .weight(1f)
+                                                                .aspectRatio(1f)
+                                                        ) {
+                                                            AsyncImage(
+                                                                model = uri,
+                                                                contentDescription = null,
+                                                                modifier = Modifier.fillMaxSize(),
+                                                                contentScale = ContentScale.Crop
+                                                            )
+                                                            IconButton(
+                                                                onClick = {
+                                                                    photoSetUris = photoSetUris - uri
+                                                                },
+                                                                modifier = Modifier
+                                                                    .align(Alignment.TopEnd)
+                                                                    .size(28.dp)
+                                                            ) {
+                                                                Icon(
+                                                                    imageVector = Icons.Default.Close,
+                                                                    contentDescription = null,
+                                                                    tint = Color.White,
+                                                                    modifier = Modifier.size(18.dp)
+                                                                )
+                                                            }
+                                                        }
+                                                    }
+                                                    repeat(3 - rowUris.size) {
+                                                        Spacer(modifier = Modifier.weight(1f))
+                                                    }
+                                                }
+                                                Spacer(modifier = Modifier.height(8.dp))
+                                            }
+                                            if (photoSetUris.size < LutCreatorViewModel.PHOTO_SET_MAX_PHOTOS) {
+                                                OutlinedButton(
+                                                    onClick = { photoSetLauncher.launch("image/*") },
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    shape = RoundedCornerShape(12.dp)
+                                                ) {
+                                                    Text(stringResource(R.string.lut_creator_photo_set_add_more))
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -314,15 +443,20 @@ fun LutCreatorScreen(
                                     viewModel.showPaymentDialog = true
                                     return@Button
                                 }
-                                if (selectedMode == LutCreatorMode.AI) {
-                                    aiImageLauncher.launch("image/*")
-                                } else {
-                                    viewModel.analyzeLocalImagePairs(
+                                when (selectedMode) {
+                                    LutCreatorMode.AI -> aiImageLauncher.launch("image/*")
+                                    LutCreatorMode.LOCAL -> viewModel.analyzeLocalImagePairs(
                                         localPairs.map { LocalImagePairInput(it.sourceUri, it.targetUri) }
                                     )
+                                    LutCreatorMode.PHOTO_SET -> viewModel.analyzePhotoSet(photoSetUris)
                                 }
                             },
-                            enabled = selectedMode == LutCreatorMode.AI || localPairs.isNotEmpty(),
+                            enabled = when (selectedMode) {
+                                LutCreatorMode.AI -> true
+                                LutCreatorMode.LOCAL -> localPairs.isNotEmpty()
+                                LutCreatorMode.PHOTO_SET ->
+                                    photoSetUris.size >= LutCreatorViewModel.PHOTO_SET_MIN_PHOTOS
+                            },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(60.dp),
@@ -333,10 +467,10 @@ fun LutCreatorScreen(
                             )
                         ) {
                             Text(
-                                if (selectedMode == LutCreatorMode.AI) {
-                                    stringResource(R.string.lut_creator_select_images)
-                                } else {
-                                    stringResource(R.string.lut_creator_start_local_analysis)
+                                when (selectedMode) {
+                                    LutCreatorMode.AI -> stringResource(R.string.lut_creator_select_images)
+                                    LutCreatorMode.LOCAL -> stringResource(R.string.lut_creator_start_local_analysis)
+                                    LutCreatorMode.PHOTO_SET -> stringResource(R.string.lut_creator_photo_set_analyze)
                                 },
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = androidx.compose.ui.text.font.FontWeight.Medium
@@ -355,7 +489,13 @@ fun LutCreatorScreen(
                         CircularProgressIndicator(color = Color(0xFFE5A324))
                         Spacer(modifier = Modifier.height(24.dp))
                         Text(
-                            stringResource(R.string.lut_creator_analyzing),
+                            photoSetProgress?.let { (done, total) ->
+                                stringResource(
+                                    R.string.lut_creator_photo_set_analyzing_progress,
+                                    done,
+                                    total
+                                )
+                            } ?: stringResource(R.string.lut_creator_analyzing),
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -363,6 +503,122 @@ fun LutCreatorScreen(
                 }
 
                 is LutCreatorUiState.AnalysisComplete -> {
+                    val report = photoSetReport
+                    if (report != null) {
+                        LaunchedEffect(state) {
+                            if (photoSetName.isBlank()) {
+                                photoSetName = viewModel.defaultPhotoSetLutName()
+                            }
+                        }
+                        val nameTaken = viewModel.isLutNameTaken(photoSetName)
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .weight(1f)
+                                .verticalScroll(rememberScrollState()),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Top
+                        ) {
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Icon(
+                                imageVector = AppIcons.AutoAwesome,
+                                contentDescription = null,
+                                modifier = Modifier.size(48.dp),
+                                tint = Color(0xFFE5A324)
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                stringResource(R.string.lut_creator_analysis_complete),
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                            )
+                            if (photoSetSkippedCount > 0) {
+                                Spacer(modifier = Modifier.height(12.dp))
+                                Text(
+                                    text = stringResource(
+                                        R.string.lut_creator_photo_set_skipped,
+                                        photoSetSkippedCount
+                                    ),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(20.dp))
+                            PhotoSetReportCard(report = report)
+                            Spacer(modifier = Modifier.height(20.dp))
+                            PhotoSetPreviewSection(
+                                uris = photoSetUris.take(3),
+                                lutData = photoSetPreviewLut,
+                                compareFraction = photoSetCompare,
+                                onCompareFractionChange = { photoSetCompare = it }
+                            )
+                            Spacer(modifier = Modifier.height(20.dp))
+                            PhotoSetTuningSection(
+                                tuning = photoSetTuning,
+                                onTuningChange = { viewModel.updatePhotoSetTuning(it) },
+                                onReset = { viewModel.resetPhotoSetTuning() }
+                            )
+                            Spacer(modifier = Modifier.height(20.dp))
+                            OutlinedTextField(
+                                value = photoSetName,
+                                onValueChange = { photoSetName = it },
+                                label = { Text(stringResource(R.string.lut_creator_lut_name_hint)) },
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = Color(0xFFE5A324)
+                                )
+                            )
+                            if (nameTaken) {
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = stringResource(R.string.lut_creator_photo_set_name_taken),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.error
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Checkbox(
+                                    checked = photoSetUseExample,
+                                    onCheckedChange = { photoSetUseExample = it }
+                                )
+                                Text(
+                                    text = stringResource(R.string.lut_creator_photo_set_use_example),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(24.dp))
+                        }
+                        Button(
+                            onClick = {
+                                viewModel.generateAndImportPhotoSetLut(
+                                    photoSetName.trim(),
+                                    photoSetUseExample
+                                )
+                            },
+                            enabled = photoSetName.isNotBlank() && !nameTaken,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 24.dp)
+                                .height(60.dp),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFFE5A324),
+                                contentColor = Color.White
+                            )
+                        ) {
+                            Text(
+                                stringResource(R.string.lut_creator_generate_save),
+                                style = MaterialTheme.typography.titleLarge
+                            )
+                        }
+                    } else {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -384,7 +640,7 @@ fun LutCreatorScreen(
                             style = MaterialTheme.typography.headlineSmall,
                             fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
                         )
-                        
+
                         state.generatedSourceBitmap?.let { bitmap ->
                             Spacer(modifier = Modifier.height(24.dp))
                             Text(
@@ -438,6 +694,7 @@ fun LutCreatorScreen(
                             style = MaterialTheme.typography.titleLarge
                         )
                     }
+                    }
                 }
 
                 is LutCreatorUiState.Generating -> {
@@ -467,6 +724,39 @@ fun LutCreatorScreen(
                             style = MaterialTheme.typography.headlineMedium,
                             color = Color(0xFFE5A324)
                         )
+                    }
+                    val exportFile = lastExportedCubeFile
+                    if (exportFile != null) {
+                        OutlinedButton(
+                            onClick = {
+                                val uri = FileProvider.getUriForFile(
+                                    context,
+                                    "${context.packageName}.fileprovider",
+                                    exportFile
+                                )
+                                val intent = Intent(Intent.ACTION_SEND).apply {
+                                    type = "text/plain"
+                                    putExtra(Intent.EXTRA_STREAM, uri)
+                                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                }
+                                context.startActivity(
+                                    Intent.createChooser(
+                                        intent,
+                                        context.getString(R.string.lut_creator_photo_set_export_cube)
+                                    )
+                                )
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 12.dp)
+                                .height(56.dp),
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            Text(
+                                stringResource(R.string.lut_creator_photo_set_export_cube),
+                                style = MaterialTheme.typography.titleLarge
+                            )
+                        }
                     }
                     Button(
                         onClick = { onSuccess(state.lutId) },
@@ -579,4 +869,350 @@ private fun Context.findActivity(): Activity? {
         current = current.baseContext
     }
     return null
+}
+
+@Composable
+private fun PhotoSetReportCard(report: StyleReport) {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+        shape = RoundedCornerShape(20.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(20.dp)) {
+            Text(
+                text = stringResource(R.string.lut_creator_photo_set_report_title),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            PhotoSetReportRow(
+                label = stringResource(R.string.lut_creator_photo_set_report_wb),
+                value = stringResource(
+                    R.string.lut_creator_photo_set_wb_values,
+                    report.whiteBalance.first,
+                    report.whiteBalance.second,
+                    report.whiteBalance.third
+                )
+            )
+            PhotoSetReportRow(
+                label = stringResource(R.string.lut_creator_photo_set_report_tone),
+                value = stringResource(
+                    R.string.lut_creator_photo_set_tone_values,
+                    report.blackPoint,
+                    report.whitePoint,
+                    report.medianLuma
+                )
+            )
+            val saturationDelta = report.saturationDeltaPercent
+            PhotoSetReportRow(
+                label = stringResource(R.string.lut_creator_photo_set_report_saturation),
+                value = (if (saturationDelta >= 0) "+" else "") + "$saturationDelta%"
+            )
+            PhotoSetBandRow(
+                label = stringResource(R.string.lut_creator_photo_set_report_sky),
+                band = report.sky
+            )
+            PhotoSetBandRow(
+                label = stringResource(R.string.lut_creator_photo_set_report_foliage),
+                band = report.foliage
+            )
+            PhotoSetBandRow(
+                label = stringResource(R.string.lut_creator_photo_set_report_skin),
+                band = report.skin
+            )
+            PhotoSetReportRow(
+                label = stringResource(R.string.lut_creator_photo_set_report_shadow_tint),
+                value = String.format(
+                    java.util.Locale.US,
+                    "R %+.2f · G %+.2f · B %+.2f",
+                    report.shadowTint.first,
+                    report.shadowTint.second,
+                    report.shadowTint.third
+                )
+            )
+            PhotoSetReportRow(
+                label = stringResource(R.string.lut_creator_photo_set_report_highlight_tint),
+                value = String.format(
+                    java.util.Locale.US,
+                    "R %+.2f · G %+.2f · B %+.2f",
+                    report.highlightTint.first,
+                    report.highlightTint.second,
+                    report.highlightTint.third
+                )
+            )
+            if (report.isMixedStyle) {
+                Spacer(modifier = Modifier.height(10.dp))
+                Text(
+                    text = stringResource(R.string.lut_creator_photo_set_mixed_warning),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color(0xFFE5A324)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun PhotoSetReportRow(label: String, value: String) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = androidx.compose.ui.text.font.FontWeight.Medium
+        )
+    }
+}
+
+@Composable
+private fun PhotoSetBandRow(label: String, band: BandMeasurement) {
+    val value = if (band.hasEnoughData && band.hueMedian != null && band.saturationMedian != null) {
+        stringResource(
+            R.string.lut_creator_photo_set_band_values,
+            band.hueMedian,
+            band.saturationMedian
+        ) + " · " + stringResource(
+            R.string.lut_creator_photo_set_coverage,
+            (band.coverage * 100f).toInt()
+        )
+    } else {
+        stringResource(R.string.lut_creator_photo_set_no_data)
+    }
+    PhotoSetReportRow(label = label, value = value)
+}
+
+@Composable
+private fun PhotoSetPreviewSection(
+    uris: List<Uri>,
+    lutData: FloatArray?,
+    compareFraction: Float,
+    onCompareFractionChange: (Float) -> Unit
+) {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+        shape = RoundedCornerShape(20.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(20.dp)) {
+            Text(
+                text = stringResource(R.string.lut_creator_photo_set_preview_title),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            uris.forEach { uri ->
+                PhotoSetPreviewImage(
+                    uri = uri,
+                    lutData = lutData,
+                    compareFraction = compareFraction,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = stringResource(R.string.lut_creator_photo_set_before),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = stringResource(R.string.lut_creator_photo_set_after),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Slider(
+                value = compareFraction,
+                onValueChange = onCompareFractionChange,
+                valueRange = 0f..1f,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+    }
+}
+
+@Composable
+private fun PhotoSetPreviewImage(
+    uri: Uri,
+    lutData: FloatArray?,
+    compareFraction: Float,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    val original by produceState<Bitmap?>(null, uri) {
+        value = withContext(Dispatchers.IO) {
+            PhotoSetPreview.loadPreviewBitmap(context, uri)
+        }
+    }
+    val graded by produceState<Bitmap?>(null, original, lutData) {
+        value = withContext(Dispatchers.Default) {
+            val src = original
+            if (src == null || lutData == null) {
+                null
+            } else {
+                PhotoSetPreview.applyLutToBitmap(src, lutData)
+            }
+        }
+    }
+    Surface(
+        shape = RoundedCornerShape(14.dp),
+        modifier = modifier.height(200.dp)
+    ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            original?.let { bitmap ->
+                Image(
+                    bitmap = bitmap.asImageBitmap(),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+            }
+            graded?.let { bitmap ->
+                Image(
+                    bitmap = bitmap.asImageBitmap(),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop,
+                    alpha = compareFraction
+                )
+            }
+            if (original == null) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(color = Color(0xFFE5A324))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PhotoSetTuningSection(
+    tuning: PhotoSetTuning,
+    onTuningChange: (PhotoSetTuning) -> Unit,
+    onReset: () -> Unit
+) {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+        shape = RoundedCornerShape(20.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(20.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = stringResource(R.string.lut_creator_photo_set_tuning_title),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
+                )
+                TextButton(onClick = onReset) {
+                    Text(stringResource(R.string.lut_creator_photo_set_reset_tuning))
+                }
+            }
+            PhotoSetTuningSliderRow(
+                label = stringResource(R.string.lut_creator_photo_set_tuning_strength),
+                value = tuning.strength * 100f,
+                valueRange = 0f..100f,
+                valueText = "${tuning.strength.times(100f).toInt()}%",
+                onValueChange = { onTuningChange(tuning.copy(strength = it / 100f)) }
+            )
+            PhotoSetTuningSliderRow(
+                label = stringResource(R.string.lut_creator_photo_set_tuning_saturation),
+                value = tuning.saturation,
+                valueRange = -50f..50f,
+                valueText = signedIntText(tuning.saturation),
+                onValueChange = { onTuningChange(tuning.copy(saturation = it)) }
+            )
+            PhotoSetTuningSliderRow(
+                label = stringResource(R.string.lut_creator_photo_set_tuning_contrast),
+                value = tuning.contrast,
+                valueRange = -50f..50f,
+                valueText = signedIntText(tuning.contrast),
+                onValueChange = { onTuningChange(tuning.copy(contrast = it)) }
+            )
+            PhotoSetTuningSliderRow(
+                label = stringResource(R.string.lut_creator_photo_set_tuning_warm_cool),
+                value = tuning.warmCool,
+                valueRange = -50f..50f,
+                valueText = signedIntText(tuning.warmCool),
+                onValueChange = { onTuningChange(tuning.copy(warmCool = it)) }
+            )
+            PhotoSetTuningSliderRow(
+                label = stringResource(R.string.lut_creator_photo_set_tuning_sky),
+                value = tuning.sky,
+                valueRange = -50f..50f,
+                valueText = signedIntText(tuning.sky),
+                onValueChange = { onTuningChange(tuning.copy(sky = it)) }
+            )
+            PhotoSetTuningSliderRow(
+                label = stringResource(R.string.lut_creator_photo_set_tuning_foliage),
+                value = tuning.foliage,
+                valueRange = -50f..50f,
+                valueText = signedIntText(tuning.foliage),
+                onValueChange = { onTuningChange(tuning.copy(foliage = it)) }
+            )
+            PhotoSetTuningSliderRow(
+                label = stringResource(R.string.lut_creator_photo_set_tuning_skin),
+                value = tuning.skin,
+                valueRange = -PhotoSetTuning.SKIN_LIMIT..PhotoSetTuning.SKIN_LIMIT,
+                valueText = signedIntText(tuning.skin),
+                onValueChange = { onTuningChange(tuning.copy(skin = it)) }
+            )
+        }
+    }
+}
+
+private fun signedIntText(value: Float): String {
+    val intValue = value.toInt()
+    return if (intValue >= 0) "+$intValue" else intValue.toString()
+}
+
+@Composable
+private fun PhotoSetTuningSliderRow(
+    label: String,
+    value: Float,
+    valueRange: ClosedFloatingPointRange<Float>,
+    valueText: String,
+    onValueChange: (Float) -> Unit
+) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = valueText,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = androidx.compose.ui.text.font.FontWeight.Medium
+            )
+        }
+        Slider(
+            value = value,
+            onValueChange = onValueChange,
+            valueRange = valueRange,
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
 }
